@@ -1,6 +1,6 @@
-const consts = require("./consts");
 const net = require("net");
 const dgram = require("dgram");
+const constants = require('./consts')
 
 // Variables
 const server = net.createServer();
@@ -25,6 +25,7 @@ function handleUserRequest(socket, data) {
                 if (!friendsRoom[pass]) {
                     friendsRoom[pass] = [ sockAddr ]
                 } else {
+                    console.log(friendsRoom[pass].indexOf(sockAddr))
                     if (friendsRoom[pass].indexOf(sockAddr) == -1)
                         friendsRoom[pass].push(sockAddr)
                 }
@@ -33,36 +34,37 @@ function handleUserRequest(socket, data) {
             } else {
                 // Logout, don't care what it is
                 let pass = friendPassLookup[lookupStr]
-                if (!pass) {
+                if ((pass == null) || (pass == undefined)) {
                     return;
                 }
 
-                friendsRoom[pass] = friendsRoom[pass].filter(addr => addr != sockAddr)
+                friendsRoom[pass] = friendsRoom[pass].filter(friend => friend != sockAddr)
             }
         } else if ((String.fromCharCode(data[0]) == 'c') && (String.fromCharCode(data[1]) == 'r')) {
             let pass = friendPassLookup[lookupStr]
-            if (!pass) {
+            if ((pass == null) || (pass == undefined)) {
                 return;
             }
 
-            if (friendsRoom[pass]) {
-                friendsRoom[pass].forEach(addr => {
-                    if (addr == sockAddr) {
+            if (friendsRoom[pass] && friendsRoom[pass].length > 0) {
+                const buffer = Buffer.alloc(4 + sockAddr.length)
+                buffer[0] = 'c'.charCodeAt(0)
+                buffer[1] = 'r'.charCodeAt(0)
+                buffer[2] = ((socket.remoteFamily == 'ipv4') ? '0' : '1').charCodeAt(0)
+                buffer[3] = sockAddr.length
+
+                for (let i = 0; i < sockAddr.length; i++) {
+                    buffer[4 + i] = sockAddr.charCodeAt(i)
+                }
+
+                friendsRoom[pass].slice(0, constants.MAX_DISCOVERY_ENTRIES).forEach(friend => {
+                    if (friend == sockAddr) {
                         return;
                     }
-
-                    const buffer = Buffer.alloc(4 + sockAddr.length)
-                    buffer[0] = 'c'.charCodeAt(0)
-                    buffer[1] = 'r'.charCodeAt(0)
-                    buffer[2] = ((socket.remoteFamily == 'ipv4') ? '0' : '1').charCodeAt(0)
-                    buffer[3] = sockAddr.length
-
-                    for (let i = 0; i < sockAddr.length; i++) {
-                        buffer[4 + i] = sockAddr.charCodeAt(i)
-                    }
-
+    
                     // Don't care error (maybe we should)
-                    discoverDeliveryServer.send(buffer, consts.USER_HARBOUR_PORT, addr)
+                    console.log("Send to " + friend)
+                    discoverDeliveryServer.send(buffer, constants.HARBOR_PORT, friend)
                 })
             }
         }
@@ -70,8 +72,8 @@ function handleUserRequest(socket, data) {
 }
 
 function setupServerSocket() {
-    server.listen(consts.STANDARD_SERVER_PORT, () => {
-        console.log('Central server is listening on port %d', consts.STANDARD_SERVER_PORT)
+    server.listen(constants.CENTRAL_PORT, () => {
+        console.log('Central server is listening on port %d', constants.CENTRAL_PORT)
     })
     
     server.on('connection', socket => {
