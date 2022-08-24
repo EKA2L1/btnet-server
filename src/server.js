@@ -25,7 +25,7 @@ function handleUserRequest(socket, data) {
                 if (!friendsRoom[pass]) {
                     friendsRoom[pass] = [ sockAddr ]
                 } else {
-                    console.log(friendsRoom[pass].indexOf(sockAddr))
+                    //console.log(friendsRoom[pass].indexOf(sockAddr))
                     if (friendsRoom[pass].indexOf(sockAddr) == -1)
                         friendsRoom[pass].push(sockAddr)
                 }
@@ -63,7 +63,7 @@ function handleUserRequest(socket, data) {
                     }
     
                     // Don't care error (maybe we should)
-                    console.log("Send to " + friend)
+                    // console.log("Send to " + friend)
                     discoverDeliveryServer.send(buffer, constants.HARBOR_PORT, friend)
                 })
             }
