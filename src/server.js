@@ -39,6 +39,7 @@ function handleUserRequest(socket, data) {
                 }
 
                 friendsRoom[pass] = friendsRoom[pass].filter(friend => friend != sockAddr)
+                friendPassLookup[lookupStr] = null
             }
         } else if ((String.fromCharCode(data[0]) == 'c') && (String.fromCharCode(data[1]) == 'r')) {
             let pass = friendPassLookup[lookupStr]
